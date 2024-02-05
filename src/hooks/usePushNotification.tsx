@@ -1,8 +1,28 @@
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {PermissionsAndroid, Platform} from 'react-native';
-import messaging from '@react-native-firebase/messaging';
+import messaging, {
+  FirebaseMessagingTypes,
+} from '@react-native-firebase/messaging';
+
+interface NotificationTypes {
+  title: string | undefined;
+  body: string | undefined;
+}
+
+const getNotificationData = (
+  remoteMessage: FirebaseMessagingTypes.RemoteMessage,
+) => {
+  return {
+    title: remoteMessage.notification?.title,
+    body: remoteMessage.notification?.body,
+  };
+};
 
 const usePushNotifications = () => {
+  const [modalVisible, setModalVisible] = useState(false);
+  const [notificationData, setNotificationData] =
+    useState<NotificationTypes | null>(null);
+
   const requestUserPermission = async () => {
     if (Platform.OS === 'ios') {
       const authStatus = await messaging().requestPermission();
@@ -31,10 +51,9 @@ const usePushNotifications = () => {
 
   const listenToForegroundNotifications = () => {
     const unsubscribe = messaging().onMessage(async remoteMessage => {
-      console.log(
-        'A new message arrived! (FOREGROUND)',
-        JSON.stringify(remoteMessage),
-      );
+      setNotificationData(getNotificationData(remoteMessage));
+
+      setModalVisible(true);
     });
 
     return unsubscribe;
@@ -42,20 +61,18 @@ const usePushNotifications = () => {
 
   const listenToBackgroundNotifications = () => {
     messaging().setBackgroundMessageHandler(async remoteMessage => {
-      console.log(
-        'A new message arrived! (BACKGROUND)',
-        JSON.stringify(remoteMessage),
-      );
+      setNotificationData(getNotificationData(remoteMessage));
+
+      setModalVisible(true);
     });
   };
 
   const onNotificationOpenedAppFromBackground = () => {
     const unsubscribe = messaging().onNotificationOpenedApp(
       async remoteMessage => {
-        console.log(
-          'App opened from BACKGROUND by tapping notification:',
-          JSON.stringify(remoteMessage),
-        );
+        setNotificationData(getNotificationData(remoteMessage));
+
+        setModalVisible(true);
       },
     );
     return unsubscribe;
@@ -65,18 +82,17 @@ const usePushNotifications = () => {
     const remoteMessage = await messaging().getInitialNotification();
 
     if (remoteMessage) {
-      console.log(
-        'App opened from QUIT by tapping notification:',
-        JSON.stringify(remoteMessage),
-      );
+      setNotificationData(getNotificationData(remoteMessage));
+
+      setModalVisible(true);
     }
   };
 
   useEffect(() => {
-    let unsubscribeOnMessage: () => void;
-    let unsubscribeOnNotification: () => void;
+    let unsubscribeOnMessage: () => void | undefined;
+    let unsubscribeOnNotification: () => void | undefined;
 
-    (async () => {
+    (() => {
       try {
         unsubscribeOnMessage = listenToForegroundNotifications();
         unsubscribeOnNotification = onNotificationOpenedAppFromBackground();
@@ -94,6 +110,8 @@ const usePushNotifications = () => {
       unsubscribeOnNotification();
     };
   }, []);
+
+  return {modalVisible, notificationData, setModalVisible, setNotificationData};
 };
 
 export default usePushNotifications;
