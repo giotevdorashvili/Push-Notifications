@@ -19,7 +19,6 @@ const getNotificationData = (
 };
 
 const usePushNotifications = () => {
-  const [modalVisible, setModalVisible] = useState(false);
   const [notificationData, setNotificationData] =
     useState<NotificationTypes | null>(null);
 
@@ -52,8 +51,6 @@ const usePushNotifications = () => {
   const listenToForegroundNotifications = () => {
     const unsubscribe = messaging().onMessage(async remoteMessage => {
       setNotificationData(getNotificationData(remoteMessage));
-
-      setModalVisible(true);
     });
 
     return unsubscribe;
@@ -62,8 +59,6 @@ const usePushNotifications = () => {
   const listenToBackgroundNotifications = () => {
     messaging().setBackgroundMessageHandler(async remoteMessage => {
       setNotificationData(getNotificationData(remoteMessage));
-
-      setModalVisible(true);
     });
   };
 
@@ -71,8 +66,6 @@ const usePushNotifications = () => {
     const unsubscribe = messaging().onNotificationOpenedApp(
       async remoteMessage => {
         setNotificationData(getNotificationData(remoteMessage));
-
-        setModalVisible(true);
       },
     );
     return unsubscribe;
@@ -83,8 +76,6 @@ const usePushNotifications = () => {
 
     if (remoteMessage) {
       setNotificationData(getNotificationData(remoteMessage));
-
-      setModalVisible(true);
     }
   };
 
@@ -92,18 +83,16 @@ const usePushNotifications = () => {
     let unsubscribeOnMessage: () => void | undefined;
     let unsubscribeOnNotification: () => void | undefined;
 
-    (() => {
-      try {
-        unsubscribeOnMessage = listenToForegroundNotifications();
-        unsubscribeOnNotification = onNotificationOpenedAppFromBackground();
-        requestUserPermission();
-        getFCMToken();
-        listenToBackgroundNotifications();
-        onNotificationOpenedAppFromQuit();
-      } catch (error) {
-        console.log(error);
-      }
-    })();
+    try {
+      unsubscribeOnMessage = listenToForegroundNotifications();
+      unsubscribeOnNotification = onNotificationOpenedAppFromBackground();
+      requestUserPermission();
+      getFCMToken();
+      listenToBackgroundNotifications();
+      onNotificationOpenedAppFromQuit();
+    } catch (error) {
+      console.log(error);
+    }
 
     return () => {
       unsubscribeOnMessage();
@@ -111,7 +100,7 @@ const usePushNotifications = () => {
     };
   }, []);
 
-  return {modalVisible, notificationData, setModalVisible, setNotificationData};
+  return notificationData;
 };
 
 export default usePushNotifications;
