@@ -1,22 +1,23 @@
 import React, {useEffect} from 'react';
 import {View, Text, StyleSheet} from 'react-native';
+
 import usePushNotifications from '../hooks/usePushNotification';
-import {useModal} from '../store/ModalContext';
+import ModalController from '../controllers/ModalController';
+import Modal from './modal/Modal';
 
 const MainLayout = () => {
   const notificationData = usePushNotifications();
 
-  const {openModal} = useModal();
-
   useEffect(() => {
     if (notificationData) {
-      openModal(notificationData);
+      ModalController.showModal(notificationData);
     }
-  }, [notificationData, openModal]);
+  }, [notificationData]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.text}>hi notifications</Text>
+      <Modal />
     </View>
   );
 };
