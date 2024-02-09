@@ -29,7 +29,7 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({children}) => {
     <ModalContext.Provider value={{openModal, closeModal}}>
       {children}
 
-      {modalContent && <Modal {...{...modalContent, closeModal}} />}
+      <Modal {...{...modalContent, closeModal}} />
     </ModalContext.Provider>
   );
 };
